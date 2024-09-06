@@ -1,24 +1,38 @@
-import logo from './logo.svg';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { FolderProvider } from './context/FolderContext'; // Add FolderProvider
+import Auth from './components/Auth';
+import Dashboard from './components/Dashboard';
+import PrivateRoute from './components/PrivateRoute';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <AuthProvider>
+        <FolderProvider> {/* Wrap the app in FolderProvider */}
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Auth />} />
+            <Route path="/signup" element={<Auth isSignup={true} />} />
+
+            {/* Private Route for Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Dashboard />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Default Route */}
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        </FolderProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
