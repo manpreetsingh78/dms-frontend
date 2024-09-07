@@ -1,19 +1,20 @@
-import React, { useState, useContext, useRef } from 'react'; // Add useRef for file input
-import { Button, Modal, Box, Typography, IconButton } from '@mui/material'; // Material UI components
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CloseIcon from '@mui/icons-material/Close'; // Close icon for modal
-import AuthContext from '../context/AuthContext';
-import FolderContext from '../context/FolderContext';
-import { uploadFile } from '../services/api';
-import './GlobalUploadButton.css';
+import React, { useState, useContext, useRef } from "react";
+import { Button, Modal, Box, Typography, IconButton } from "@mui/material";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import CloseIcon from "@mui/icons-material/Close";
+import AuthContext from "../context/AuthContext";
+import FolderContext from "../context/FolderContext";
+import { uploadFile, createFolder } from "../services/api";
+import "./GlobalUploadButton.css";
 
-const GlobalUploadButton = ({ setFileUpload }) => {
-  const [openModal, setOpenModal] = useState(false); // State to control modal open/close
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [dragActive, setDragActive] = useState(false); // Drag and drop feedback
+const GlobalUploadButton = ({ setFileUpload, updateFolders }) => {
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const { authTokens } = useContext(AuthContext);
-  const { selectedFolder } = useContext(FolderContext);
-  const fileInputRef = useRef(null); // Create ref for the hidden file input
+  const { selectedFolder: currentFolder } = useContext(FolderContext);
+  const fileInputRef = useRef(null);
 
   // Open the modal
   const handleOpenModal = () => {
@@ -23,63 +24,167 @@ const GlobalUploadButton = ({ setFileUpload }) => {
   // Close the modal
   const handleCloseModal = () => {
     setOpenModal(false);
-    setSelectedFile(null); // Reset file when modal closes
+    setSelectedFiles([]);
+    setSelectedFolder(null);
   };
 
-  // Handle file drop in drag-and-drop area
-  const handleDrop = (e) => {
+  // Handle file and folder drop in drag-and-drop area
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false); // Remove drag feedback
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setSelectedFile(e.dataTransfer.files[0]); // Set the dropped file
+    setDragActive(false);
+
+    const items = e.dataTransfer.items;
+    if (items) {
+      let files = [];
+      let folderData = null;
+
+      for (let i = 0; i < items.length; i++) {
+        const entry = items[i].webkitGetAsEntry();
+
+        if (entry.isDirectory) {
+          folderData = await handleDirectoryUpload(entry);
+          setSelectedFolder(folderData);
+        } else if (entry.isFile) {
+          files.push(items[i].getAsFile());
+        }
+      }
+
+      if (files.length > 0) {
+        setSelectedFiles(files);
+      }
     }
+  };
+
+  // Handle folder and file extraction
+  const handleDirectoryUpload = async (directoryEntry) => {
+    let folderName = directoryEntry.name;
+    let files = await readDirectory(directoryEntry);
+    return { folderName, files };
+  };
+
+  // Read files from a directory
+  const readDirectory = (directoryEntry) => {
+    return new Promise((resolve) => {
+      const reader = directoryEntry.createReader();
+      reader.readEntries((entries) => {
+        const files = [];
+        entries.forEach((entry) => {
+          if (entry.isFile) {
+            entry.file((file) => {
+              files.push(file);
+            });
+          }
+        });
+        resolve(files);
+      });
+    });
   };
 
   // Handle drag over event for drag feedback
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(true); // Add drag feedback
+    setDragActive(true);
   };
 
   // Handle drag leave event to remove feedback
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragActive(false); // Remove drag feedback
+    setDragActive(false);
   };
 
-  // Handle click on drag-and-drop area to open file dialog
-  const handleClick = () => {
-    fileInputRef.current.click(); // Programmatically click the hidden file input
-  };
-
-  // Handle file selection through input
+  // Handle file selection through input (allow both files and folders)
   const handleFileChange = (e) => {
-    setSelectedFile(e.target.files[0]);
+    const files = Array.from(e.target.files);
+    console.log(files)
+
+    // Check if folders were selected
+    const folderDetected = files.some((file) => file.webkitRelativePath);
+
+    if (folderDetected) {
+      // Group files by folder name for folder upload
+      const folderName = files[0].webkitRelativePath.split("/")[0];
+      setSelectedFolder({
+        folderName,
+        files,
+      });
+    } else {
+      // Handle multiple file selection
+      setSelectedFiles(files);
+    }
   };
 
-  // Handle file upload
-  const handleFileUpload = async (e) => {
-    e.preventDefault();
-    if (selectedFile) {
-      const fileName = selectedFile.name;
-      const fileType = selectedFile.type;
-      const fileSize = selectedFile.size;
-      const folderId = selectedFolder ? selectedFolder.id : 0;
-
+  // Sequentially upload files one by one
+  const uploadFilesSequentially = async (files, folderId) => {
+    for (const file of files) {
+        let file_type = file.type
+        if (file.type == "" || file.type == null) {
+            
+            file_type="Unknown"
+        }
       try {
-        await uploadFile(authTokens, selectedFile, folderId, fileName, fileType, fileSize);
-        setSelectedFile(null); // Reset after upload
+        await uploadFile(
+          authTokens,
+          file,
+          folderId,
+          file.name,
+          file_type,
+          file.size
+        );
+        // console.log(`Uploaded: ${file.name}`);
+      } catch (error) {
+        console.error(`Failed to upload: ${file.name}`, error);
+      }
+    }
+  };
+
+  // Handle file or folder upload
+  const handleUpload = async (e) => {
+    e.preventDefault();
+
+    // If a folder is selected
+    if (selectedFolder && selectedFolder.files.length > 0) {
+      try {
+        // Create folder in backend
+        const folderId = currentFolder ? currentFolder.id : null;
+        const newFolder = await createFolder(
+          authTokens,
+          selectedFolder.folderName,
+          folderId
+        );
+
+        // Upload all files in the folder one by one
+        await uploadFilesSequentially(selectedFolder.files, newFolder.data.id);
+
+        setSelectedFolder(null); // Reset after upload
         handleCloseModal(); // Close modal after upload
         setFileUpload(true);
+        updateFolders();
       } catch (error) {
-        console.error('Error uploading file:', error);
-        alert('Failed to upload file');
+        console.error("Error uploading folder:", error);
+        alert("Failed to upload folder");
+      }
+    }
+
+    // If individual or multiple files are selected
+    else if (selectedFiles.length > 0) {
+      try {
+        const folderId = currentFolder ? currentFolder.id : null;
+        // Upload files one by one
+        await uploadFilesSequentially(selectedFiles, folderId);
+
+        setSelectedFiles([]); // Reset after upload
+        handleCloseModal(); // Close modal after upload
+        setFileUpload(true);
+        updateFolders();
+      } catch (error) {
+        console.error("Error uploading files:", error);
+        alert("Failed to upload files");
       }
     } else {
-      alert('Please select a file to upload');
+      alert("Please select files or a folder to upload");
     }
   };
 
@@ -90,23 +195,26 @@ const GlobalUploadButton = ({ setFileUpload }) => {
         Upload
       </Button>
 
-      {/* Modal for file upload */}
       <Modal open={openModal} onClose={handleCloseModal}>
         <Box
           sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: { xs: '90%', sm: 400 }, // Responsive width
-            bgcolor: 'background.paper',
-            borderRadius: '8px',
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: 400 },
+            bgcolor: "background.paper",
+            borderRadius: "8px",
             boxShadow: 24,
-            p: { xs: 2, sm: 4 }, // Responsive padding
+            p: { xs: 2, sm: 4 },
           }}
         >
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">Upload File</Typography>
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography variant="h6">Upload Files/Folder</Typography>
             <IconButton onClick={handleCloseModal}>
               <CloseIcon />
             </IconButton>
@@ -114,37 +222,43 @@ const GlobalUploadButton = ({ setFileUpload }) => {
 
           {/* Drag-and-drop area */}
           <div
-            className={`drop-zone ${dragActive ? 'drag-active' : ''}`}
+            className={`drop-zone ${dragActive ? "drag-active" : ""}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={handleClick} // Add onClick handler to trigger file input
+            onClick={() => fileInputRef.current.click()} // Programmatically trigger the hidden input
           >
-            {selectedFile ? (
-              <p>{selectedFile.name}</p> // Show selected file name
+            {selectedFolder ? (
+              <p>Selected Folder: {selectedFolder.folderName}</p>
+            ) : selectedFiles.length > 0 ? (
+              <p>
+                Selected Files:{" "}
+                {selectedFiles.map((file) => file.name).join(", ")}
+              </p>
             ) : (
-              <p>Drag & Drop your file here or click to select</p>
+              <p>Drag & Drop your files or folder here, or click to select</p>
             )}
             <input
               type="file"
-              ref={fileInputRef} // Reference for hidden file input
+              ref={fileInputRef}
+              style={{ display: "none" }} // Hide the input
               onChange={handleFileChange}
-              style={{ display: 'none' }} // Hide default file input
-              id="fileInput"
+            //   webkitdirectory="true"
+              multiple // Allow multiple files/folder selection
             />
           </div>
 
-          {/* File upload button */}
+          {/* Upload button */}
           <Button
             variant="contained"
             color="primary"
             startIcon={<CloudUploadIcon />}
-            onClick={handleFileUpload}
-            disabled={!selectedFile} // Disable upload button if no file is selected
+            onClick={handleUpload}
+            disabled={!(selectedFolder || selectedFiles.length > 0)} // Disable if no files or folder is selected
             fullWidth
             sx={{ mt: 2 }}
           >
-            Upload to {selectedFolder ? selectedFolder.name : 'Root'}
+            Upload to {currentFolder ? currentFolder.name : "Root"}
           </Button>
         </Box>
       </Modal>

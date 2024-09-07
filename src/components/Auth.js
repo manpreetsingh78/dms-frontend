@@ -9,7 +9,7 @@ const Auth = ({ isSignup }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirm password
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [lastName] = useState('');
   const [errorMessage, setErrorMessage] = useState(''); // State to store error messages
   const { loginUser, authTokens } = useContext(AuthContext);
 

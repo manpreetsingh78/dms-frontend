@@ -1,0 +1,111 @@
+.file-box {
+    float: left;
+    width: 220px;
+  }
+  
+  .enter-area {
+    cursor: pointer;
+  }
+  
+  .file {
+    border: 1px solid #e7eaec;
+    padding: 0;
+    background-color: #ffffff;
+    position: relative;
+    margin: 0 0 20px 20px;
+  }
+  
+  .file .icon {
+    padding: 15px 10px;
+    text-align: center;
+  }
+  
+  .file .icon i {
+    font-size: 70px;
+    color: #dadada;
+  }
+  
+  .file .file-name {
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-top: 1px solid #e7eaec;
+    overflow: hidden;
+    white-space: nowrap; /* Prevent wrapping */
+    text-overflow: ellipsis; /* Add ellipsis for long text */
+    display: block;
+    max-width: 180px; /* Set a maximum width for the text */
+    position: relative;
+  }
+  
+  /* Tooltip styling */
+  .file-name[data-tooltip] {
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .file-name[data-tooltip]::after {
+    content: attr(data-tooltip); /* Use the tooltip text */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 150%; /* Position above the text */
+    background-color: rgba(0, 0, 0, 0.7); /* Dark background */
+    color: #fff; /* White text */
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 12px;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, bottom 0.3s ease; /* Add delay for fade-in effect */
+    visibility: hidden;
+  }
+  
+  /* Tooltip hover effect */
+  .file-name[data-tooltip]:hover::after {
+    opacity: 1;
+    visibility: visible;
+    bottom: 120%; /* Move up when hovered */
+  }
+  
+  /* Delay before showing tooltip */
+  .file-name[data-tooltip]:hover::after {
+    transition-delay: 0.5s; /* 0.5-second delay before showing tooltip */
+  }
+  
+  /* Styling the small text below the file name */
+  .file-name small {
+    color: #676a6c;
+  }
+  
+  /* MOBILE FRIENDLY STYLES */
+  @media (max-width: 768px) {
+    /* Adjust file-box width and margins for mobile */
+    .file-box {
+      width: 45%; /* Take up less width for mobile */
+      margin: 0px 5px; /* Center the file boxes */
+    }
+  
+    .file {
+      margin: 10px auto; /* Center the file container */
+      padding: 10px; /* Reduce padding */
+    }
+  
+    .file .icon i {
+      font-size: 50px; /* Reduce icon size on mobile */
+    }
+  
+    .file .file-name {
+      padding: 8px; /* Reduce padding */
+      max-width: 100%; /* Allow full width for the file name */
+      white-space: normal; /* Allow text to wrap on small screens */
+      text-align: center; /* Center the text */
+    }
+  
+    /* Make tooltip text size slightly smaller for mobile */
+    .file-name[data-tooltip]::after {
+      font-size: 10px;
+    }
+  }
+  

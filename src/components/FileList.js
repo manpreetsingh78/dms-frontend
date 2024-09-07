@@ -1,37 +1,36 @@
-import React, { useState, useEffect, useContext } from 'react';
-import AuthContext from '../context/AuthContext';
-import { getFiles, deleteFile, downloadFile } from '../services/api';
-import { List, ListItem, ListItemText, IconButton, Button } from '@mui/material';
-import DeleteIcon from '@mui/icons-material/Delete';
-import DownloadIcon from '@mui/icons-material/Download';
-import VisibilityIcon from '@mui/icons-material/Visibility'; // Icon for "View File" button
-import FileViewerModal from './FileViewerModal';
+import React, { useState, useEffect, useContext } from "react";
+import AuthContext from "../context/AuthContext";
+import { getFiles, deleteFile, downloadFile } from "../services/api";
+import { IconButton } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import FileViewerModal from "./FileViewerModal";
+import "./FileList.css";
+import FileIcon from "./FileIcon";
 
 const FileList = ({ folderId, fileUpload, setFileUpload }) => {
   const { authTokens } = useContext(AuthContext);
   const [files, setFiles] = useState([]);
-  const [fileToView, setFileToView] = useState(null); // State to store file to view
+  const [fileToView, setFileToView] = useState(null);
 
   useEffect(() => {
     const fetchFiles = async () => {
       const response = await getFiles(authTokens, folderId);
       setFiles(response.data);
-      console.log(files)
     };
     fetchFiles();
-    console.log(files)
-    if(fileUpload){
-        setFileUpload(false)
+    if (fileUpload) {
+      setFileUpload(false);
     }
-  }, [authTokens, folderId, fileUpload]);
+  }, [authTokens, folderId, fileUpload,setFileUpload]);
 
   const handleDelete = async (fileId) => {
     try {
       await deleteFile(authTokens, fileId);
-      setFiles(files.filter(file => file.id !== fileId));
+      setFiles(files.filter((file) => file.id !== fileId));
     } catch (error) {
-      console.error('Error deleting file:', error);
-      alert('Failed to delete file');
+      console.error("Error deleting file:", error);
+      alert("Failed to delete file");
     }
   };
 
@@ -39,66 +38,63 @@ const FileList = ({ folderId, fileUpload, setFileUpload }) => {
     try {
       const response = await downloadFile(authTokens, fileId);
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', fileName);
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
     } catch (error) {
-      console.error('Error downloading file:', error);
+      console.error("Error downloading file:", error);
     }
   };
 
-  // Function to view file content (for PDFs, TXT, etc.)
   const handleViewFile = (file) => {
-    setFileToView(file); // Set file to be viewed in modal
+    setFileToView(file);
   };
 
   return (
     <div className="file-list-container">
-      <List>
-        {files.map((file) => (
-          <ListItem
-            key={file.id}
-            secondaryAction={
-              <>
-                <IconButton
-                  edge="end"
-                  aria-label="view"
-                  color='primary'
-                  onClick={() => handleViewFile(file)} // Handle view button
-                >
-                  <VisibilityIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  aria-label="download"
-                  color='warning'
-                  onClick={() => handleDownload(file, file.file_name)}
-                >
-                  <DownloadIcon />
-                </IconButton>
-                <IconButton
-                  edge="end"
-                  color='error'
-                  aria-label="delete"
-                  onClick={() => handleDelete(file.id)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </>
-            }
-          >
-            <ListItemText primary={file.file_name} />
-          </ListItem>
-        ))}
-      </List>
-       {/* File Viewer Modal */}
-       {fileToView && (
+      {files.map((file) => (
+        <div key={file.id}>
+          <div className="file-box">
+            <div className="file">
+              <div className="enter-area" onClick={() => handleViewFile(file)}>
+                <div className="icon">
+                  <FileIcon fileType={file.file_type} />
+                </div>
+                <div className="file-name" data-tooltip="{file.file_name}">
+                  {file.file_name}
+                  <br />
+                  <small>{file.created_at_human_readable}</small>
+                  <br />
+                  <small>{file.file_size_human_readable}</small>
+                </div>
+              </div>
+              <IconButton
+                edge="end"
+                aria-label="download"
+                color="warning"
+                onClick={() => handleDownload(file, file.file_name)}
+              >
+                <DownloadIcon />
+              </IconButton>
+              <IconButton
+                edge="end"
+                color="error"
+                aria-label="delete"
+                onClick={() => handleDelete(file.id)}
+              >
+                <DeleteIcon />
+              </IconButton>
+            </div>
+          </div>
+        </div>
+      ))}
+      {fileToView && (
         <FileViewerModal
           open={Boolean(fileToView)}
           file={fileToView}
-          onClose={() => setFileToView(null)} // Close the modal
+          onClose={() => setFileToView(null)}
         />
       )}
     </div>
