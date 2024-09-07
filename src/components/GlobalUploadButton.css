@@ -1,0 +1,27 @@
+/* Drag-and-drop zone */
+.drop-zone {
+    width: 100%;
+    padding: 20px 0px;
+    border: 2px dashed #ccc;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .drop-zone.drag-active {
+    background-color: #e0e0e0;
+    border-color: #2196f3;
+  }
+  
+  .drop-zone p {
+    margin: 0;
+    font-size: 16px;
+  }
+  
+  /* Mobile optimization */
+  @media (max-width: 600px) {
+    .drop-zone p {
+      font-size: 14px; /* Adjust font size on smaller screens */
+    }
+  }
+  

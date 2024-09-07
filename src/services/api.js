@@ -28,7 +28,10 @@ export const getFolders = async (authTokens) => {
 };
 
 // API to create a new folder
-export const createFolder = async (authTokens, folderName) => {
+export const createFolder = async (authTokens, folderName,parentFolderId) => {
+  if(parentFolderId){
+    return axios.post(`${API_URL}folders/`, { name: folderName,parent_folder:parentFolderId }, getAuthHeaders(authTokens));
+  }
   return axios.post(`${API_URL}folders/`, { name: folderName }, getAuthHeaders(authTokens));
 };
 

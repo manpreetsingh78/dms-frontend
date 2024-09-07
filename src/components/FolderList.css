@@ -1,0 +1,41 @@
+/* Main folder list container */
+.folder-list {
+    margin-top: 20px;
+    font-family: Arial, sans-serif;
+  }
+
+  /* Tree structure for folders */
+  .folder-tree {
+    list-style-type: none;
+    padding-left: 20px;
+  }
+  
+  .folder-item {
+    margin: 8px 0;
+    cursor: pointer;
+  }
+  
+  .folder-name {
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .folder-name:hover {
+    background-color: #f4f4f4;
+  }
+  
+  .folder-icon {
+    margin-right: 8px;
+  }
+  
+  /* Subtree styling for nested folders */
+  .folder-subtree {
+    list-style-type: none;
+    padding-left: 20px;
+    border-left: 1px solid #ddd;
+    margin-left: 10px;
+  }
+  

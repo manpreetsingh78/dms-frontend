@@ -15,7 +15,6 @@ const FileUpload = ({ folderId, onFileUpload }) => {
     if (selectedFile) {
       try {
         await uploadFile(authTokens, selectedFile, folderId);
-        alert('File uploaded successfully!');
         setSelectedFile(null);
         onFileUpload(); // Trigger file list update after upload
       } catch (error) {

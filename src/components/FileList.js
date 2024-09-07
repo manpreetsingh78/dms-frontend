@@ -7,7 +7,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility'; // Icon for "View File" button
 import FileViewerModal from './FileViewerModal';
 
-const FileList = ({ folderId }) => {
+const FileList = ({ folderId, fileUpload, setFileUpload }) => {
   const { authTokens } = useContext(AuthContext);
   const [files, setFiles] = useState([]);
   const [fileToView, setFileToView] = useState(null); // State to store file to view
@@ -16,16 +16,19 @@ const FileList = ({ folderId }) => {
     const fetchFiles = async () => {
       const response = await getFiles(authTokens, folderId);
       setFiles(response.data);
+      console.log(files)
     };
     fetchFiles();
     console.log(files)
-  }, [authTokens, folderId]);
+    if(fileUpload){
+        setFileUpload(false)
+    }
+  }, [authTokens, folderId, fileUpload]);
 
   const handleDelete = async (fileId) => {
     try {
       await deleteFile(authTokens, fileId);
       setFiles(files.filter(file => file.id !== fileId));
-      alert('File deleted successfully');
     } catch (error) {
       console.error('Error deleting file:', error);
       alert('Failed to delete file');
@@ -62,6 +65,7 @@ const FileList = ({ folderId }) => {
                 <IconButton
                   edge="end"
                   aria-label="view"
+                  color='primary'
                   onClick={() => handleViewFile(file)} // Handle view button
                 >
                   <VisibilityIcon />
@@ -69,12 +73,14 @@ const FileList = ({ folderId }) => {
                 <IconButton
                   edge="end"
                   aria-label="download"
+                  color='warning'
                   onClick={() => handleDownload(file, file.file_name)}
                 >
                   <DownloadIcon />
                 </IconButton>
                 <IconButton
                   edge="end"
+                  color='error'
                   aria-label="delete"
                   onClick={() => handleDelete(file.id)}
                 >

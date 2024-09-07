@@ -1,0 +1,71 @@
+/* Overall container */
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: #f5f5f5;
+  }
+  
+  /* Main content area with sidebar and file list */
+  .main-content {
+    display: flex;
+    flex-grow: 1;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  
+  /* Sidebar for folders */
+  .sidebar {
+    width: 25%;
+    padding: 16px;
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  /* File area for displaying files */
+  .file-area {
+    width: 75%;
+    padding: 16px;
+    background-color: #fff;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+  
+  /* Vertical divider between sidebar and file list */
+  .vertical-divider {
+    margin: 0 16px;
+  }
+  
+  /* Make the layout responsive */
+  @media (max-width: 768px) {
+    .main-content {
+      flex-direction: column;
+      padding: 0;
+    }
+  
+    .sidebar {
+      width: 100%;
+      margin-bottom: 16px;
+    }
+  
+    .file-area {
+      width: 100%;
+    }
+  
+    .vertical-divider {
+      display: none;
+    }
+  }
+  
+  /* AppBar styling for mobile optimization */
+  @media (max-width: 600px) {
+    .MuiTypography-h6 {
+      font-size: 16px;
+    }
+  
+    .MuiButton-root {
+      font-size: 14px;
+    }
+  }
+  
